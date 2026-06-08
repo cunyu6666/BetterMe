@@ -1,0 +1,17 @@
+{
+  "name": "BetterMe",
+  "short_name": "BetterMe",
+  "description": "成为更好的自己 — 个人健康管理",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F7FA",
+  "theme_color": "#6C63FF",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
