@@ -6,13 +6,14 @@
  */
 import { useState } from 'react'
 import { IconLayoutDashboard, IconClipboardList, IconTarget, IconTrophy, IconHeart, IconBook, IconSettings } from '@tabler/icons-react'
-import Dashboard from './components/Dashboard'
-import Plans from './components/plans/Plans'
-import Habits from './components/Habits'
-import Goals from './components/Goals'
-import Health from './components/Health'
-import Learning from './components/Learning'
-import Settings from './components/Settings'
+import DashboardView from './features/dashboard/components/DashboardView'
+import PlanList from './features/plans/components/PlanList'
+import HabitList from './features/habits/components/HabitList'
+import GoalList from './features/goals/components/GoalList'
+import HealthList from './features/health/components/HealthList'
+import LearningList from './features/learning/components/LearningList'
+import SettingsPanel from './features/settings/components/SettingsPanel'
+import { AuthGuard } from './features/auth/components/AuthGuard'
 
 const tabs = [
   { key: 'dashboard', label: '概览', icon: IconLayoutDashboard },
@@ -31,35 +32,37 @@ export default function App() {
 
   const renderContent = () => {
     switch (tab) {
-      case 'dashboard': return <Dashboard />
-      case 'plans': return <Plans />
-      case 'habits': return <Habits />
-      case 'goals': return <Goals />
-      case 'health': return <Health />
-      case 'learning': return <Learning />
-      case 'settings': return <Settings />
+      case 'dashboard': return <DashboardView />
+      case 'plans': return <PlanList />
+      case 'habits': return <HabitList />
+      case 'goals': return <GoalList />
+      case 'health': return <HealthList />
+      case 'learning': return <LearningList />
+      case 'settings': return <SettingsPanel />
     }
   }
 
   return (
-    <div className="app-container">
-      <div className="header">
-        <h1>BetterMe</h1>
-        <p>成为更好的自己</p>
+    <AuthGuard>
+      <div className="app-container">
+        <div className="header">
+          <h1>BetterMe</h1>
+          <p>成为更好的自己</p>
+        </div>
+        <nav className="tabs">
+          {tabs.map(t => {
+            const Icon = t.icon
+            return (
+              <button key={t.key} className={`tab ${tab === t.key ? 'active' : ''}`}
+                onClick={() => setTab(t.key)}>
+                <Icon className="tab-icon" stroke={1.8} />
+                <span>{t.label}</span>
+              </button>
+            )
+          })}
+        </nav>
+        <main>{renderContent()}</main>
       </div>
-      <nav className="tabs">
-        {tabs.map(t => {
-          const Icon = t.icon
-          return (
-            <button key={t.key} className={`tab ${tab === t.key ? 'active' : ''}`}
-              onClick={() => setTab(t.key)}>
-              <Icon className="tab-icon" stroke={1.8} />
-              <span>{t.label}</span>
-            </button>
-          )
-        })}
-      </nav>
-      <main>{renderContent()}</main>
-    </div>
+    </AuthGuard>
   )
 }
