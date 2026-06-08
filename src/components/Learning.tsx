@@ -1,18 +1,19 @@
 /**
  * [WHO]: 提供 Learning 默认导出组件（学习成长页，3 种 type：book/skill/note），typeConfig 类型配置 + renderSection 内部渲染函数
- * [FROM]: 依赖 react 的 useState/useEffect；依赖 ../utils/storage 的 uid/today；依赖 ../lib/api 的 CRUD 函数；依赖 ../types 的 LearningItem
+ * [FROM]: 依赖 react 的 useState/useEffect；依赖 @tabler/icons-react 图标；依赖 ../lib/api 的 CRUD 函数
  * [TO]: 被 src/App.tsx 在 tab === 'learning' 时渲染
  * [HERE]: src/components/Learning.tsx - 书籍/技能/笔记三类学习项；book 与 skill 带 range 滑块更新 progress；note 支持动态 tag 数组
  */
 import { useState, useEffect } from 'react'
+import { IconPlus, IconBook, IconTarget, IconNote, IconBook2, IconX, IconCheck, IconAward } from '@tabler/icons-react'
 import { uid, today } from '../utils/storage'
 import { fetchLearningItems, upsertLearningItem, deleteLearningItem as apiDeleteLearningItem } from '../lib/api'
 import type { LearningItem } from '../types'
 
 const typeConfig = {
-  book: { icon: '📖', label: '书籍' },
-  skill: { icon: '🎯', label: '技能' },
-  note: { icon: '📝', label: '笔记' },
+  book: { icon: IconBook, label: '书籍' },
+  skill: { icon: IconTarget, label: '技能' },
+  note: { icon: IconNote, label: '笔记' },
 }
 
 export default function Learning() {
@@ -127,8 +128,8 @@ export default function Learning() {
               </div>
               <div className="flex gap-1 flex-wrap">
                 {(form.tags || []).map(t => (
-                  <span key={t} className="note-tag cursor-pointer" onClick={() => removeTag(t)}>
-                    {t} ×
+                  <span key={t} className="note-tag cursor-pointer flex items-center gap-1" onClick={() => removeTag(t)}>
+                    {t} <IconX size={10} stroke={2} />
                   </span>
                 ))}
               </div>
@@ -138,16 +139,19 @@ export default function Learning() {
     }
   }
 
-  const renderSection = (title: string, icon: string, sectionItems: LearningItem[]) => (
+  const renderSection = (title: string, Icon: typeof IconBook, sectionItems: LearningItem[]) => (
     <div className="card">
-      <div className="card-title">{icon} {title} ({sectionItems.length})</div>
+      <div className="card-title">
+        <Icon size={18} stroke={1.8} className="icon" />
+        {title} ({sectionItems.length})
+      </div>
       {sectionItems.length === 0 ? (
         <div className="text-[var(--text-light)] text-[13px] py-3">暂无{title}</div>
       ) : sectionItems.map(item => (
-        <div key={item.id} className="border-b border-[var(--border)] py-3">
+        <div key={item.id} className="border-b border-[var(--border-light)] py-3">
           <div className="flex justify-between items-center mb-1">
             <div className="font-medium text-sm">{item.title}</div>
-            <button className="delete-btn" onClick={() => handleDeleteItem(item.id)}>×</button>
+            <button className="delete-btn" onClick={() => handleDeleteItem(item.id)}><IconX size={14} stroke={2} /></button>
           </div>
           {item.type !== 'note' && (
             <>
@@ -168,7 +172,7 @@ export default function Learning() {
               {item.tags.map(t => <span key={t} className="note-tag">{t}</span>)}
             </div>
           )}
-          <div className="text-[11px] text-[#bbb] mt-1">{item.createdAt}</div>
+          <div className="text-[11px] text-[var(--text-muted)] mt-1">{item.createdAt}</div>
         </div>
       ))}
     </div>
@@ -177,44 +181,61 @@ export default function Learning() {
   return (
     <div>
       <div className="section-header">
-        <h2 className="text-lg">学习成长</h2>
-        <button className="btn btn-primary btn-sm" onClick={() => setShowForm(!showForm)}>
-          {showForm ? '取消' : '+ 添加'}
+        <h2 className="text-lg font-semibold">学习成长</h2>
+        <button className="btn btn-primary btn-sm flex items-center gap-1" onClick={() => setShowForm(!showForm)}>
+          {showForm ? '取消' : <><IconPlus size={14} stroke={2} />添加</>}
         </button>
       </div>
       <div className="stat-grid">
-        <div className="stat-box"><div className="stat-value">{books.length}</div><div className="stat-label">在读书籍</div></div>
-        <div className="stat-box"><div className="stat-value">{skills.length}</div><div className="stat-label">学习技能</div></div>
-        <div className="stat-box"><div className="stat-value">{notes.length}</div><div className="stat-label">知识笔记</div></div>
-        <div className="stat-box"><div className="stat-value">{items.filter(i => i.progress === 100).length}</div><div className="stat-label">已完成</div></div>
+        <div className="stat-box">
+          <IconBook size={20} stroke={1.5} className="mx-auto mb-1" style={{ color: 'var(--primary)' }} />
+          <div className="stat-value">{books.length}</div><div className="stat-label">在读书籍</div>
+        </div>
+        <div className="stat-box">
+          <IconTarget size={20} stroke={1.5} className="mx-auto mb-1" style={{ color: 'var(--success)' }} />
+          <div className="stat-value">{skills.length}</div><div className="stat-label">学习技能</div>
+        </div>
+        <div className="stat-box">
+          <IconNote size={20} stroke={1.5} className="mx-auto mb-1" style={{ color: 'var(--info)' }} />
+          <div className="stat-value">{notes.length}</div><div className="stat-label">知识笔记</div>
+        </div>
+        <div className="stat-box">
+          <IconAward size={20} stroke={1.5} className="mx-auto mb-1" style={{ color: 'var(--warning)' }} />
+          <div className="stat-value">{items.filter(i => i.progress === 100).length}</div><div className="stat-label">已完成</div>
+        </div>
       </div>
       {showForm && (
         <div className="add-form">
           <div className="form-group">
             <label>类型</label>
             <div className="flex gap-2">
-              {Object.entries(typeConfig).map(([key, cfg]) => (
-                <button key={key} className={`btn btn-sm ${itemType === key ? 'btn-primary' : 'bg-[var(--bg)] text-[var(--text)]'}`}
-                  onClick={() => { setItemType(key as LearningItem['type']); setForm({}); }}>
-                  {cfg.icon} {cfg.label}
-                </button>
-              ))}
+              {Object.entries(typeConfig).map(([key, cfg]) => {
+                const TypeIcon = cfg.icon
+                return (
+                  <button key={key} className={`btn btn-sm flex items-center gap-1 ${itemType === key ? 'btn-primary' : 'btn-outline'}`}
+                    onClick={() => { setItemType(key as LearningItem['type']); setForm({}); }}>
+                    <TypeIcon size={14} stroke={2} /> {cfg.label}
+                  </button>
+                )
+              })}
             </div>
           </div>
           {renderForm()}
-          <button className="btn btn-primary" onClick={addItem}>保存</button>
+          <button className="btn btn-primary flex items-center gap-1" onClick={addItem}>
+            <IconCheck size={14} stroke={2} /> 保存
+          </button>
         </div>
       )}
       {items.length === 0 && !showForm ? (
         <div className="empty-state">
-          <div className="icon">📖</div>
+          <IconBook2 size={48} stroke={1} className="icon mx-auto" />
           <p>开始记录你的学习之旅吧</p>
         </div>
       ) : (
         <>
-          {books.length > 0 && renderSection('阅读清单', '📖', books)}
-          {skills.length > 0 && renderSection('技能学习', '🎯', skills)}
-          {notes.length > 0 && renderSection('知识笔记', '📝', notes)}
+          {books.length > 0 && renderSection('阅读清单', IconBook, books)}
+          {skills.length > 0 && renderSection('技能学习', IconTarget, skills)}
+          {notes.length > 0 && renderSection('知识笔记', IconNote, notes)}
         </>
       )}
     </div>

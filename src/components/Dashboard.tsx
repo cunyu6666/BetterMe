@@ -1,10 +1,11 @@
 /**
  * [WHO]: 提供 Dashboard 默认导出组件（概览聚合页），展示今日统计 + 周对比 + 睡眠趋势 + 即将到期目标 + 学习进展
- * [FROM]: 依赖 react 的 useState/useEffect；依赖 ../utils/storage 的 today；依赖 ../lib/api 的 fetch 函数
+ * [FROM]: 依赖 react 的 useState/useEffect；依赖 @tabler/icons-react 图标；依赖 ../lib/api 的 fetch 函数
  * [TO]: 被 src/App.tsx 在 tab === 'dashboard' 时渲染；是 7 个一级 tab 中唯一的只读页面
  * [HERE]: src/components/Dashboard.tsx - 跨 4 类数据源的只读聚合层；纯计算 + 展示
  */
 import { useState, useEffect } from 'react'
+import { IconTarget, IconTrophy, IconHeart, IconMoodSmile, IconMoonStars, IconClock, IconBook, IconSparkles, IconTrendingUp, IconTrendingDown, IconFlame, IconTargetArrow } from '@tabler/icons-react'
 import { today } from '../utils/storage'
 import { fetchHabits, fetchGoals, fetchHealthRecords, fetchLearningItems } from '../lib/api'
 import type { Habit, Goal, HealthRecord, LearningItem } from '../types'
@@ -28,11 +29,10 @@ export default function Dashboard() {
   const activeGoals = goals.filter(g => g.status === 'active')
   const todayMood = health.filter(r => r.date === todayDate && r.type === 'mood').pop()
 
-  // 本周/上周日期
   const getWeekDates = (offset: number) => {
     const dates: string[] = []
     const d = new Date()
-    const dayOfWeek = d.getDay() === 0 ? 6 : d.getDay() - 1 // Monday = 0
+    const dayOfWeek = d.getDay() === 0 ? 6 : d.getDay() - 1
     d.setDate(d.getDate() - dayOfWeek - offset * 7)
     for (let i = 0; i < 7; i++) {
       dates.push(d.toISOString().slice(0, 10))
@@ -49,14 +49,12 @@ export default function Dashboard() {
     return { date: d, done, total: habits.length }
   })
 
-  // 本周 vs 上周习惯完成率
   const thisWeekDone = thisWeekDates.reduce((sum, d) => sum + habits.filter(h => h.completedDates.includes(d)).length, 0)
   const lastWeekDone = lastWeekDates.reduce((sum, d) => sum + habits.filter(h => h.completedDates.includes(d)).length, 0)
   const thisWeekRate = habits.length > 0 ? Math.round(thisWeekDone / (habits.length * 7) * 100) : 0
   const lastWeekRate = habits.length > 0 ? Math.round(lastWeekDone / (habits.length * 7) * 100) : 0
   const weekDiff = thisWeekRate - lastWeekRate
 
-  // 最近7天睡眠
   const getSleepHours = () => {
     const days: { date: string; hours: number }[] = []
     for (let i = 6; i >= 0; i--) {
@@ -78,7 +76,6 @@ export default function Dashboard() {
   const sleepData = getSleepHours()
   const avgSleep = sleepData.filter(d => d.hours > 0).reduce((s, d) => s + d.hours, 0) / Math.max(1, sleepData.filter(d => d.hours > 0).length)
 
-  // 即将到期的目标（7天内）
   const upcomingGoals = activeGoals
     .filter(g => {
       if (!g.deadline) return false
@@ -87,41 +84,49 @@ export default function Dashboard() {
     })
     .sort((a, b) => a.deadline.localeCompare(b.deadline))
 
+  const moodEmojis = ['😢','😕','😐','🙂','😄']
+
   return (
     <div>
       <h2 className="text-lg mb-4">
         {(() => {
           const h = new Date().getHours()
-          if (h < 6) return '🌙 夜深了，注意休息'
-          if (h < 12) return '🌅 早上好，新的一天开始了'
-          if (h < 18) return '☀️ 下午好，继续加油'
-          return '🌆 晚上好，回顾一下今天吧'
+          if (h < 6) return '夜深了，注意休息'
+          if (h < 12) return '早上好，新的一天开始了'
+          if (h < 18) return '下午好，继续加油'
+          return '晚上好，回顾一下今天吧'
         })()}
       </h2>
 
       <div className="stat-grid">
         <div className="stat-box">
+          <IconTarget size={20} stroke={1.5} className="mx-auto mb-1" style={{ color: 'var(--primary)' }} />
           <div className="stat-value">{todayHabits.length}/{habits.length}</div>
           <div className="stat-label">今日习惯</div>
         </div>
         <div className="stat-box">
+          <IconTrophy size={20} stroke={1.5} className="mx-auto mb-1" style={{ color: 'var(--warning)' }} />
           <div className="stat-value">{activeGoals.length}</div>
           <div className="stat-label">进行中目标</div>
         </div>
         <div className="stat-box">
+          <IconHeart size={20} stroke={1.5} className="mx-auto mb-1" style={{ color: 'var(--success)' }} />
           <div className="stat-value">{todayHealth.length}</div>
           <div className="stat-label">健康记录</div>
         </div>
         <div className="stat-box">
-          <div className="stat-value">{todayMood ? ['😢','😕','😐','🙂','😄'][todayMood.data.mood-1] : '-'}</div>
+          <IconMoodSmile size={20} stroke={1.5} className="mx-auto mb-1" style={{ color: 'var(--info)' }} />
+          <div className="stat-value">{todayMood ? moodEmojis[todayMood.data.mood-1] : '-'}</div>
           <div className="stat-label">今日心情</div>
         </div>
       </div>
 
-      {/* 周对比 */}
       {habits.length > 0 && (
         <div className="card">
-          <div className="card-title">📊 习惯完成对比</div>
+          <div className="card-title">
+            <IconFlame size={18} stroke={1.8} className="icon" />
+            习惯完成对比
+          </div>
           <div className="flex items-center gap-4 mb-3 text-sm">
             <div>
               <span className="text-[var(--text-light)]">本周 </span>
@@ -131,8 +136,9 @@ export default function Dashboard() {
               <span className="text-[var(--text-light)]">上周 </span>
               <span className="font-medium">{lastWeekRate}%</span>
             </div>
-            <div className={weekDiff >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'}>
-              {weekDiff >= 0 ? '↑' : '↓'} {Math.abs(weekDiff)}%
+            <div className={`flex items-center gap-1 ${weekDiff >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+              {weekDiff >= 0 ? <IconTrendingUp size={14} /> : <IconTrendingDown size={14} />}
+              {Math.abs(weekDiff)}%
             </div>
           </div>
           <div className="flex items-end gap-2 h-30 py-3">
@@ -145,11 +151,12 @@ export default function Dashboard() {
                     style={{
                       height: Math.max(4, pct) + '%',
                       background: d.date === todayDate ? 'var(--primary)' : 'var(--primary-light)',
+                      opacity: d.date === todayDate ? 1 : 0.5,
                     }} />
                   <div className="text-[11px] text-[var(--text-light)] mt-1">
                     {d.date === todayDate ? '今' : dayName}
                   </div>
-                  <div className="text-[10px] text-[#bbb]">{d.done}/{d.total}</div>
+                  <div className="text-[10px] text-[var(--text-muted)]">{d.done}/{d.total}</div>
                 </div>
               )
             })}
@@ -157,10 +164,12 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 睡眠趋势 */}
       {sleepData.some(d => d.hours > 0) && (
         <div className="card">
-          <div className="card-title">😴 最近7天睡眠</div>
+          <div className="card-title">
+            <IconMoonStars size={18} stroke={1.8} className="icon" />
+            最近7天睡眠
+          </div>
           <div className="flex items-center gap-3 mb-2 text-sm">
             <span className="text-[var(--text-light)]">平均</span>
             <span className="font-medium">{avgSleep.toFixed(1)} 小时</span>
@@ -172,8 +181,8 @@ export default function Dashboard() {
               return (
                 <div key={i} className="flex-1 text-center">
                   <div className="text-[10px] text-[var(--text-light)]">{d.hours > 0 ? d.hours.toFixed(1) : ''}</div>
-                  <div className="bg-[var(--info)] rounded-sm mx-auto w-5 transition-all duration-300"
-                    style={{ height: Math.max(2, pct) + '%' }} />
+                  <div className="rounded-sm mx-auto w-5 transition-all duration-300"
+                    style={{ height: Math.max(2, pct) + '%', background: 'var(--info)' }} />
                   <div className="text-[11px] text-[var(--text-light)] mt-1">{dayName}</div>
                 </div>
               )
@@ -182,17 +191,19 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 即将到期 */}
       {upcomingGoals.length > 0 && (
         <div className="card">
-          <div className="card-title">⏰ 即将到期的目标</div>
+          <div className="card-title">
+            <IconClock size={18} stroke={1.8} className="icon" />
+            即将到期的目标
+          </div>
           {upcomingGoals.map(g => {
             const daysLeft = Math.ceil((new Date(g.deadline).getTime() - new Date(todayDate).getTime()) / 86400000)
             return (
-              <div key={g.id} className="flex justify-between items-center py-2 border-b border-[var(--border)] last:border-0">
+              <div key={g.id} className="flex justify-between items-center py-2 border-b border-[var(--border-light)] last:border-0">
                 <div>
                   <div className="text-sm font-medium">{g.title}</div>
-                  <div className="text-xs text-[var(--text-light)]">截止: {g.deadline}</div>
+                  <div className="text-xs text-[var(--text-muted)]">截止: {g.deadline}</div>
                 </div>
                 <span className={`text-sm font-medium ${daysLeft <= 1 ? 'text-[var(--danger)]' : daysLeft <= 3 ? 'text-[var(--warning)]' : 'text-[var(--text-light)]'}`}>
                   {daysLeft === 0 ? '今天' : daysLeft === 1 ? '明天' : `${daysLeft}天后`}
@@ -203,10 +214,12 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 进行中的目标 */}
       {activeGoals.length > 0 && (
         <div className="card">
-          <div className="card-title">🎯 进行中的目标</div>
+          <div className="card-title">
+            <IconTargetArrow size={18} stroke={1.8} className="icon" />
+            进行中的目标
+          </div>
           {activeGoals.slice(0, 3).map(g => {
             const progress = g.tasks.length > 0
               ? Math.round((g.tasks.filter(t => t.done).length / g.tasks.length) * 100)
@@ -226,10 +239,12 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 学习进展 */}
       {learning.length > 0 && (
         <div className="card">
-          <div className="card-title">📖 学习进展</div>
+          <div className="card-title">
+            <IconBook size={18} stroke={1.8} className="icon" />
+            学习进展
+          </div>
           {learning.filter(i => i.type === 'book').slice(0, 3).map(b => (
             <div key={b.id} className="mb-2">
               <div className="flex justify-between text-[13px]">
@@ -246,10 +261,10 @@ export default function Dashboard() {
 
       {(habits.length === 0 && goals.length === 0 && health.length === 0 && learning.length === 0) && (
         <div className="card text-center py-10">
-          <div className="text-5xl mb-3">🚀</div>
-          <h3 className="mb-2">开始你的 BetterMe 之旅</h3>
+          <IconSparkles size={40} stroke={1.2} className="mx-auto mb-3" style={{ color: 'var(--primary)' }} />
+          <h3 className="mb-2 font-semibold">开始你的 BetterMe 之旅</h3>
           <p className="text-[var(--text-light)] text-sm">
-            点击上方标签页，开始记录习惯、设定目标、关注健康、记录学习
+            点击下方标签页，开始记录习惯、设定目标、关注健康、记录学习
           </p>
         </div>
       )}

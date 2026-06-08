@@ -5,6 +5,7 @@
  * [HERE]: src/components/Goals.tsx - 目标模块的 CRUD 入口；SubtaskInput/MilestoneInput 是同文件内部组件；状态三态 active/completed/abandoned
  */
 import { useState, useEffect } from 'react'
+import { IconPlus, IconCheck, IconCircleCheck, IconClock, IconTrophy, IconX } from '@tabler/icons-react'
 import { uid, today } from '../utils/storage'
 import { fetchGoals, upsertGoal, deleteGoal as apiDeleteGoal } from '../lib/api'
 import type { Goal, Milestone } from '../types'
@@ -128,8 +129,8 @@ export default function Goals() {
     <div>
       <div className="section-header">
         <h2 className="text-lg">我的目标</h2>
-        <button className="btn btn-primary btn-sm" onClick={() => setShowForm(!showForm)}>
-          {showForm ? '取消' : '+ 新目标'}
+        <button className="btn btn-primary btn-sm flex items-center gap-1" onClick={() => setShowForm(!showForm)}>
+          {showForm ? '取消' : <><IconPlus size={14} stroke={2} />新目标</>}
         </button>
       </div>
       {showForm && (
@@ -163,7 +164,7 @@ export default function Goals() {
       )}
       {goals.length === 0 ? (
         <div className="empty-state">
-          <div className="icon">🏆</div>
+          <IconTrophy size={48} stroke={1} className="icon mx-auto" />
           <p>还没有目标，创建一个开始行动吧</p>
         </div>
       ) : goals.map(g => {
@@ -173,8 +174,9 @@ export default function Goals() {
           <div className={`goal-item ${g.status !== 'active' ? 'opacity-60' : ''}`} key={g.id}>
             <div className="goal-header">
               <div className="flex-1 cursor-pointer" onClick={() => setExpandedId(expandedId === g.id ? null : g.id)}>
-                <div className="goal-title">
-                  {g.status === 'completed' ? '✅ ' : ''}{g.title}
+                <div className="goal-title flex items-center gap-1.5">
+                  {g.status === 'completed' && <IconCircleCheck size={16} stroke={2} style={{ color: 'var(--success)' }} />}
+                  {g.title}
                 </div>
                 {g.description && <div className="goal-desc">{g.description}</div>}
               </div>
@@ -185,7 +187,7 @@ export default function Goals() {
                   <option value="completed">已完成</option>
                   <option value="abandoned">已放弃</option>
                 </select>
-                <button className="delete-btn" onClick={() => handleDeleteGoal(g.id)}>×</button>
+                <button className="delete-btn" onClick={() => handleDeleteGoal(g.id)}><IconX size={14} stroke={2} /></button>
               </div>
             </div>
             <div className="progress-bar">
@@ -196,17 +198,17 @@ export default function Goals() {
             </div>
             <div className="text-xs text-[var(--text-light)] mb-2">
               进度 {getProgress(g)}% · {g.tasks.filter(t => t.done).length}/{g.tasks.length} 个子任务
-              {isUrgent && <span className="ml-2 text-[var(--warning)] font-medium">⏰ {daysLeft === 0 ? '今天截止' : `还剩${daysLeft}天`}</span>}
+              {isUrgent && <span className="ml-2 text-[var(--warning)] font-medium flex items-center gap-1"><IconClock size={12} stroke={2} />{daysLeft === 0 ? '今天截止' : `还剩${daysLeft}天`}</span>}
             </div>
 
             {/* 子任务 */}
             {g.tasks.map(t => (
               <div className="task-item" key={t.id}>
                 <div className={`task-check ${t.done ? 'done' : ''}`} onClick={() => toggleTask(g.id, t.id)}>
-                  {t.done ? '✓' : ''}
+                  {t.done ? <IconCheck size={12} stroke={2.5} /> : ''}
                 </div>
                 <span className={`task-text ${t.done ? 'done' : ''}`}>{t.title}</span>
-                <button className="delete-btn" onClick={() => deleteTask(g.id, t.id)}>×</button>
+                <button className="delete-btn" onClick={() => deleteTask(g.id, t.id)}><IconX size={12} stroke={2} /></button>
               </div>
             ))}
             <SubtaskInput onAdd={(title) => addTask(g.id, title)} />
@@ -222,7 +224,7 @@ export default function Goals() {
                       return (
                         <div key={m.id} className="flex items-center gap-2 text-sm">
                           <div className={`task-check ${m.done ? 'done' : ''}`} onClick={() => toggleMilestone(g.id, m.id)}>
-                            {m.done ? '✓' : ''}
+                            {m.done ? <IconCheck size={12} stroke={2.5} /> : ''}
                           </div>
                           <span className={`flex-1 ${m.done ? 'line-through text-[var(--text-light)]' : ''}`}>{m.title}</span>
                           {m.dueDate && (
@@ -230,7 +232,7 @@ export default function Goals() {
                               {m.dueDate}
                             </span>
                           )}
-                          <button className="delete-btn" onClick={() => deleteMilestone(g.id, m.id)}>×</button>
+                          <button className="delete-btn" onClick={() => deleteMilestone(g.id, m.id)}><IconX size={12} stroke={2} /></button>
                         </div>
                       )
                     })}

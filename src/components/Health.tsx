@@ -1,19 +1,20 @@
 /**
  * [WHO]: 提供 Health 默认导出组件（健康记录页，4 种 type：exercise/diet/sleep/mood 共用页面），运动模板 + 睡眠趋势 + 心情日历
- * [FROM]: 依赖 react 的 useState/useEffect；依赖 ../utils/storage 的 uid/today；依赖 ../lib/api 的 CRUD 函数；依赖 ../types 的 HealthRecord
+ * [FROM]: 依赖 react 的 useState/useEffect；依赖 @tabler/icons-react 图标；依赖 ../lib/api 的 CRUD 函数
  * [TO]: 被 src/App.tsx 在 tab === 'health' 时渲染
  * [HERE]: src/components/Health.tsx - 多态表单页面；renderForm/renderRecordContent 按 type 分发；今日+历史两层展示
  */
 import { useState, useEffect } from 'react'
+import { IconPlus, IconRun, IconBowlChopsticks, IconMoonStars, IconMoodSmile, IconHeart, IconX, IconCheck, IconClock } from '@tabler/icons-react'
 import { uid, today } from '../utils/storage'
 import { fetchHealthRecords, upsertHealthRecord, deleteHealthRecord as apiDeleteHealthRecord } from '../lib/api'
 import type { HealthRecord } from '../types'
 
 const typeConfig = {
-  exercise: { icon: '🏃', label: '运动', color: '#E8F5E9' },
-  diet: { icon: '🍽️', label: '饮食', color: '#FFF3E0' },
-  sleep: { icon: '😴', label: '睡眠', color: '#E3F2FD' },
-  mood: { icon: '😊', label: '情绪', color: '#F3E5F5' },
+  exercise: { icon: IconRun, label: '运动', color: 'var(--success-subtle)' },
+  diet: { icon: IconBowlChopsticks, label: '饮食', color: 'var(--warning-subtle)' },
+  sleep: { icon: IconMoonStars, label: '睡眠', color: 'var(--info-subtle)' },
+  mood: { icon: IconMoodSmile, label: '情绪', color: 'var(--primary-subtle)' },
 }
 
 const exerciseTemplates = [
@@ -23,6 +24,9 @@ const exerciseTemplates = [
   { name: '瑜伽', duration: 30, intensity: 'low' },
   { name: '力量训练', duration: 45, intensity: 'high' },
 ]
+
+const moodEmojis = ['😢','😕','😐','🙂','😄']
+const qualityEmojis = ['😫','😔','😐','🙂','😊']
 
 export default function Health() {
   const [records, setRecords] = useState<HealthRecord[]>([])
@@ -52,7 +56,6 @@ export default function Health() {
 
   const todayRecords = records.filter(r => r.date === today())
 
-  // 最近7天睡眠趋势
   const getSleepTrend = () => {
     const days: string[] = []
     for (let i = 6; i >= 0; i--) {
@@ -73,7 +76,6 @@ export default function Health() {
     })
   }
 
-  // 最近30天心情日历
   const getMoodCalendar = () => {
     const days: string[] = []
     for (let i = 29; i >= 0; i--) {
@@ -161,7 +163,7 @@ export default function Health() {
                 {[1,2,3,4,5].map(n => (
                   <div key={n} className={`mood-btn ${form.quality === n ? 'selected' : ''}`}
                     onClick={() => setForm({ ...form, quality: n })}>
-                    {['😫','😔','😐','🙂','😊'][n-1]}
+                    {qualityEmojis[n-1]}
                   </div>
                 ))}
               </div>
@@ -177,7 +179,7 @@ export default function Health() {
                 {[1,2,3,4,5].map(n => (
                   <div key={n} className={`mood-btn ${form.mood === n ? 'selected' : ''}`}
                     onClick={() => setForm({ ...form, mood: n })}>
-                    {['😢','😕','😐','🙂','😄'][n-1]}
+                    {moodEmojis[n-1]}
                   </div>
                 ))}
               </div>
@@ -198,9 +200,9 @@ export default function Health() {
       case 'diet':
         return `${({ breakfast: '早餐', lunch: '午餐', dinner: '晚餐', snack: '加餐' } as Record<string,string>)[r.data.meal] || '饮食'} · ${r.data.content || ''} ${r.data.calories ? r.data.calories + '千卡' : ''}`
       case 'sleep':
-        return `${r.data.sleepTime || '?'} - ${r.data.wakeTime || '?'} · 质量 ${r.data.quality ? '😫😔😐🙂😊'[r.data.quality-1] : '?'}`
+        return `${r.data.sleepTime || '?'} - ${r.data.wakeTime || '?'} · 质量 ${r.data.quality ? qualityEmojis[r.data.quality-1] : '?'}`
       case 'mood':
-        return `心情 ${r.data.mood ? '😢😕😐🙂😄'[r.data.mood-1] : '?'} ${r.data.note ? '· ' + r.data.note : ''}`
+        return `心情 ${r.data.mood ? moodEmojis[r.data.mood-1] : '?'} ${r.data.note ? '· ' + r.data.note : ''}`
     }
   }
 
@@ -209,8 +211,10 @@ export default function Health() {
     const maxHours = 10
     return (
       <div className="card">
-        <div className="card-title cursor-pointer" onClick={() => setShowTrend(!showTrend)}>
-          😴 最近7天睡眠 {showTrend ? '▼' : '▶'}
+        <div className="card-title cursor-pointer flex items-center gap-2" onClick={() => setShowTrend(!showTrend)}>
+          <IconMoonStars size={18} stroke={1.8} className="icon" />
+          最近7天睡眠
+          <span className="text-xs text-[var(--text-muted)] ml-auto">{showTrend ? '收起' : '展开'}</span>
         </div>
         {showTrend && (
           <div>
@@ -221,10 +225,10 @@ export default function Health() {
                 return (
                   <div key={i} className="flex-1 text-center">
                     <div className="text-[10px] text-[var(--text-light)]">{d.hours > 0 ? d.hours.toFixed(1) + 'h' : ''}</div>
-                    <div className="bg-[var(--info)] rounded-sm mx-auto w-4 transition-all duration-300"
-                      style={{ height: Math.max(2, pct) + '%' }} />
+                    <div className="rounded-sm mx-auto w-4 transition-all duration-300"
+                      style={{ height: Math.max(2, pct) + '%', background: 'var(--info)' }} />
                     <div className="text-[11px] text-[var(--text-light)] mt-1">{dayName}</div>
-                    {d.quality > 0 && <div className="text-xs">{['😫','😔','😐','🙂','😊'][d.quality-1]}</div>}
+                    {d.quality > 0 && <div className="text-xs">{qualityEmojis[d.quality-1]}</div>}
                   </div>
                 )
               })}
@@ -238,14 +242,16 @@ export default function Health() {
   const renderMoodCalendar = () => {
     const calendar = getMoodCalendar()
     const dayLabels = ['一','二','三','四','五','六','日']
-    // Group into weeks
     const weeks: typeof calendar[] = []
     for (let i = 0; i < calendar.length; i += 7) {
       weeks.push(calendar.slice(i, i + 7))
     }
     return (
       <div className="card">
-        <div className="card-title">😊 最近30天心情</div>
+        <div className="card-title">
+          <IconMoodSmile size={18} stroke={1.8} className="icon" />
+          最近30天心情
+        </div>
         <div className="flex gap-0.5">
           <div className="flex flex-col gap-0.5 mr-1">
             {dayLabels.map(l => (
@@ -257,9 +263,10 @@ export default function Health() {
               {week.map(d => (
                 <div key={d.date}
                   className={`w-5 h-5 rounded-sm flex items-center justify-center text-xs cursor-default
-                    ${d.mood === 0 ? 'bg-[var(--border)]' : 'bg-[var(--primary-light)]'}`}
-                  title={`${d.date} ${d.mood > 0 ? '😢😕😐🙂😄'[d.mood-1] : '无记录'}${d.note ? ': ' + d.note : ''}`}>
-                  {d.mood > 0 ? '😢😕😐🙂😄'[d.mood-1] : ''}
+                    ${d.mood === 0 ? 'bg-[var(--border)]' : ''}`}
+                  style={d.mood > 0 ? { background: 'var(--primary-subtle)' } : undefined}
+                  title={`${d.date} ${d.mood > 0 ? moodEmojis[d.mood-1] : '无记录'}${d.note ? ': ' + d.note : ''}`}>
+                  {d.mood > 0 ? moodEmojis[d.mood-1] : ''}
                 </div>
               ))}
             </div>
@@ -272,9 +279,9 @@ export default function Health() {
   return (
     <div>
       <div className="section-header">
-        <h2 className="text-lg">身心健康</h2>
-        <button className="btn btn-primary btn-sm" onClick={() => setShowForm(!showForm)}>
-          {showForm ? '取消' : '+ 记录'}
+        <h2 className="text-lg font-semibold">身心健康</h2>
+        <button className="btn btn-primary btn-sm flex items-center gap-1" onClick={() => setShowForm(!showForm)}>
+          {showForm ? '取消' : <><IconPlus size={14} stroke={2} />记录</>}
         </button>
       </div>
       {showForm && (
@@ -282,38 +289,50 @@ export default function Health() {
           <div className="form-group">
             <label>记录类型</label>
             <div className="flex gap-2">
-              {Object.entries(typeConfig).map(([key, cfg]) => (
-                <button key={key} className={`btn btn-sm ${recordType === key ? 'btn-primary' : 'bg-[var(--bg)] text-[var(--text)]'}`}
-                  onClick={() => { setRecordType(key as HealthRecord['type']); setForm({}); }}>
-                  {cfg.icon} {cfg.label}
-                </button>
-              ))}
+              {Object.entries(typeConfig).map(([key, cfg]) => {
+                const Icon = cfg.icon
+                return (
+                  <button key={key} className={`btn btn-sm flex items-center gap-1 ${recordType === key ? 'btn-primary' : 'btn-outline'}`}
+                    onClick={() => { setRecordType(key as HealthRecord['type']); setForm({}); }}>
+                    <Icon size={14} stroke={2} /> {cfg.label}
+                  </button>
+                )
+              })}
             </div>
           </div>
           {renderForm()}
-          <button className="btn btn-primary" onClick={addRecord}>保存记录</button>
+          <button className="btn btn-primary flex items-center gap-1" onClick={addRecord}>
+            <IconCheck size={14} stroke={2} /> 保存记录
+          </button>
         </div>
       )}
       {todayRecords.length === 0 && !showForm ? (
         <div className="empty-state">
-          <div className="icon">💚</div>
+          <IconHeart size={48} stroke={1} className="icon mx-auto" />
           <p>今天还没有健康记录，开始记录吧</p>
         </div>
       ) : todayRecords.length > 0 && (
         <div className="card">
-          <div className="card-title">今日记录</div>
-          {todayRecords.map(r => (
-            <div className="health-record" key={r.id}>
-              <div className="health-icon" style={{ background: typeConfig[r.type].color }}>
-                {typeConfig[r.type].icon}
+          <div className="card-title">
+            <IconClock size={18} stroke={1.8} className="icon" />
+            今日记录
+          </div>
+          {todayRecords.map(r => {
+            const cfg = typeConfig[r.type]
+            const Icon = cfg.icon
+            return (
+              <div className="health-record" key={r.id}>
+                <div className="health-icon" style={{ background: cfg.color }}>
+                  <Icon size={18} stroke={1.8} style={{ color: 'var(--text)' }} />
+                </div>
+                <div className="health-details">
+                  <div className="health-type">{cfg.label}</div>
+                  <div className="health-meta">{renderRecordContent(r)}</div>
+                </div>
+                <button className="delete-btn" onClick={() => handleDeleteRecord(r.id)}><IconX size={14} stroke={2} /></button>
               </div>
-              <div className="health-details">
-                <div className="health-type">{typeConfig[r.type].label}</div>
-                <div className="health-meta">{renderRecordContent(r)}</div>
-              </div>
-              <button className="delete-btn" onClick={() => handleDeleteRecord(r.id)}>×</button>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
       {renderSleepTrend()}
@@ -321,18 +340,22 @@ export default function Health() {
       {records.filter(r => r.date !== today()).length > 0 && (
         <div className="card mt-3">
           <div className="card-title">历史记录</div>
-          {records.filter(r => r.date !== today()).slice(0, 20).map(r => (
-            <div className="health-record" key={r.id}>
-              <div className="health-icon" style={{ background: typeConfig[r.type].color }}>
-                {typeConfig[r.type].icon}
+          {records.filter(r => r.date !== today()).slice(0, 20).map(r => {
+            const cfg = typeConfig[r.type]
+            const Icon = cfg.icon
+            return (
+              <div className="health-record" key={r.id}>
+                <div className="health-icon" style={{ background: cfg.color }}>
+                  <Icon size={18} stroke={1.8} style={{ color: 'var(--text)' }} />
+                </div>
+                <div className="health-details">
+                  <div className="health-type">{cfg.label}</div>
+                  <div className="health-meta">{r.date} · {renderRecordContent(r)}</div>
+                </div>
+                <button className="delete-btn" onClick={() => handleDeleteRecord(r.id)}><IconX size={14} stroke={2} /></button>
               </div>
-              <div className="health-details">
-                <div className="health-type">{typeConfig[r.type].label}</div>
-                <div className="health-meta">{r.date} · {renderRecordContent(r)}</div>
-              </div>
-              <button className="delete-btn" onClick={() => handleDeleteRecord(r.id)}>×</button>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

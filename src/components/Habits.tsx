@@ -5,6 +5,7 @@
  * [HERE]: src/components/Habits.tsx - 习惯模块的 CRUD 入口；勾选用当日日期做 toggle key；getStreak 从今日倒推连续完成日；12周日历热力图
  */
 import { useState, useEffect } from 'react'
+import { IconPlus, IconCheck, IconFlame, IconArchive, IconRestore, IconTarget, IconX } from '@tabler/icons-react'
 import { uid, today } from '../utils/storage'
 import { fetchHabits, upsertHabit, deleteHabit as apiDeleteHabit } from '../lib/api'
 import type { Habit } from '../types'
@@ -151,7 +152,7 @@ export default function Habits() {
       <div className="flex items-center gap-3">
         <div className={`habit-check ${h.completedDates.includes(today()) ? 'done' : ''}`}
           onClick={() => toggle(h.id)}>
-          {h.completedDates.includes(today()) ? '✓' : ''}
+          {h.completedDates.includes(today()) ? <IconCheck size={14} stroke={2.5} /> : ''}
         </div>
         <div className="habit-info flex-1" onClick={() => setExpandedId(expandedId === h.id ? null : h.id)}>
           <div className="habit-name">{h.name}</div>
@@ -161,19 +162,19 @@ export default function Habits() {
           </div>
         </div>
         {getStreak(h) > 0 && (
-          <span className="streak-badge">🔥 {getStreak(h)}天</span>
+          <span className="streak-badge flex items-center gap-1"><IconFlame size={12} stroke={2} />{getStreak(h)}天</span>
         )}
         {h.archived ? (
-          <button className="btn btn-ghost text-xs" onClick={() => unarchive(h.id)}>恢复</button>
+          <button className="btn btn-ghost text-xs flex items-center gap-1" onClick={() => unarchive(h.id)}><IconRestore size={12} stroke={2} />恢复</button>
         ) : (
-          <button className="delete-btn" onClick={() => handleDeleteHabit(h.id)}>×</button>
+          <button className="delete-btn" onClick={() => handleDeleteHabit(h.id)}><IconX size={14} stroke={2} /></button>
         )}
       </div>
       {expandedId === h.id && !h.archived && (
         <div className="mt-2 pt-2 border-t border-[var(--border)]">
           {renderCalendar(h)}
           <div className="mt-2 flex gap-2">
-            <button className="btn btn-ghost text-xs" onClick={() => archive(h.id)}>归档</button>
+            <button className="btn btn-ghost text-xs flex items-center gap-1" onClick={() => archive(h.id)}><IconArchive size={12} stroke={2} />归档</button>
           </div>
         </div>
       )}
@@ -190,8 +191,8 @@ export default function Habits() {
               {showArchived ? '隐藏归档' : `归档 (${archivedHabits.length})`}
             </button>
           )}
-          <button className="btn btn-primary btn-sm" onClick={() => setShowForm(!showForm)}>
-            {showForm ? '取消' : '+ 新习惯'}
+          <button className="btn btn-primary btn-sm flex items-center gap-1" onClick={() => setShowForm(!showForm)}>
+            {showForm ? '取消' : <><IconPlus size={14} stroke={2} />新习惯</>}
           </button>
         </div>
       </div>
@@ -242,7 +243,7 @@ export default function Habits() {
       )}
       {activeHabits.length === 0 && !showForm ? (
         <div className="empty-state">
-          <div className="icon">🎯</div>
+          <IconTarget size={48} stroke={1} className="icon mx-auto" />
           <p>还没有习惯，点击上方按钮添加一个吧</p>
         </div>
       ) : activeHabits.map(renderHabit)}
